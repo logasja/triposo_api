@@ -56,10 +56,23 @@ class Api(object):
         elif response.status_code != requests.codes.ok:
             response.raise_for_status()
         try:
-            return response.json()['results'][0]
+            json_data = response.json()
+            if json_data['estimated_total'] == 1:
+                # print("A single one")
+                return json_data['results'][0]
+            else:
+                # print("Multiple responses")
+                return json_data['results']
         except ValueError:
             # Parsing json response failed
             pass
+
+    def _arguments_from_kwargs(self, arguments):
+        url = ''
+        for key in arguments:
+            url += key + '=' + str(arguments[key]) + '&'
+        url = url.rstrip('&')
+        return url
 
     def __build_response(self, path, model_class):
         """Retrieve data from given path and load it into an object of given model class.
@@ -78,56 +91,28 @@ class Api(object):
             return None
         return model_class(data, self)
 
-    def __get_multiple(self, model_class, path, key=None, **kwargs):
+    def __get_multiple(self, path, model_class):
         """Retrieve from API endpoint that returns a list of items.
 
         Args:
             model (type): The type of object to build using the response from the API.
             path (str):   The path of API to send request to.
-            key (str, optional): Key to use as index into each item of data from API.
-            **kwargs:     Key-value pairs to include when making the request.
 
         Returns:
             list: A list containing items of type model_class.
 
         """
         url = posixpath.join(config.END_POINT, path)
-        data = self.__get_data(url, kwargs)
+        data = self.__get_data(url)
         if not data:
             return None
         items = []
         for json_item in data:
-            item = json_item[key] if key else json_item
-            items.append(model_class(item, self))
+            item = model_class(json_item, self)
+            items.append(item)
         return items
 
-    def __pager(self, model_class, path, count=20, page=1, **kwargs):
-        """Paginate an API resource.
-
-        This is a generator that yields a single result.
-        It handles retrieving new pages from the Api as needed.
-
-        Args:
-            model_class (type): The type of model that will be instantiate for api results.
-            path (str):         Path of API to send request to.
-            count (int):        Number of Api items per page (Default value = 20).
-            page (int):         The page to start the generator from (Default value = 1).
-            **kwargs:           Key-value pairs to include when making the request.
-
-        Yields:
-            object: An instance of ``model_class``.
-
-        """
-        while True:
-            items = self.__get_multiple(model_class, path, page=page, count=count, **kwargs)
-            if items:
-                for item in items:
-                    yield item
-                page += 1
-            else:
-                break
-
-    def location(self, location_id, fields='all'):
+    def location(self, **kwargs):
         """Retrieve the episode corresponding to the specified id.
 
         Args:
@@ -137,23 +122,25 @@ class Api(object):
             Location: Location instance.
 
         """
-        return self.__build_response("location.json?id={0}&fields={1}".format(location_id, fields), models.Location)
+        url = self._arguments_from_kwargs(kwargs)
+        return self.__build_response('location.json?' + url, models.Location)
 
-    def episodes(self, site=None, page=1, count=20):
+    def locations(self, **kwargs):
         # TODO add more explanation about how iterable works (see shows() doc)
         """Get latest episodes from feed.
 
         Args:
-            site (str, optional): If specified, only episodes from this site will be returned.
+            partof (str, optional): If specified, only cities from this country will be returned.
             page (int):           The page to start from (Default value = 1).
             count (int):          Number of Episodes per page (Default value = 20).
 
         Returns:
-            iterable: An iterable collection of :class:`Episodes <rt_api.models.Episode>`
-            from 'latest' feed.
+            iterable: An iterable collection of :class:`Locations <triposo_api.models.Location>`
+            from 'topcity' feed.
 
         """
-        return self.__pager(models.Episode, "feed/", key="item", type="Episode", count=count, page=page, site=site)
+        url = self._arguments_from_kwargs(kwargs)
+        return self.__get_multiple('location.json?' + url, models.Location)
 
     def season(self, season_id):
         """Retrieve the season corresponding to the specified id.
