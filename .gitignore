@@ -102,3 +102,4 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+triposo_api/config.py
