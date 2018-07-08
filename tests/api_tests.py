@@ -27,6 +27,37 @@ class TestAPIGeneral(unittest.TestCase):
         self.assertIsNotNone(koreas[0].name)
         self.assertIsNotNone(koreas[1].name)
 
+    # def test_day_planner(self):
+    #     lisbon = self._api.day_planner(location_id='Lisbon', hotel_poi_id='T__4b30a4f2881c', start_date='2017-06-03',
+    #                                    arrival_time='14:33', end_date='2017-06-06', departure_time='16:55')
+    #     self.assertIsNotNone(lisbon)
+    #     print(lisbon)
+
+    def test_point_of_interest(self):
+        poi = self._api.point_of_interest(id='W__5013364', fields='all')
+        self.assertIsNotNone(poi)
+        self.assertEqual(poi.location_id, "Paris")
+        self.assertIn('sightseeing', poi.tag_labels)
+
+    def test_points_of_interest_tokyo(self):
+        pois = self._api.points_of_interest(location_id='Tokyo', annotate='trigram:gold', trigram='>=0.3',
+                                            count=10, fields='id,name,score,snippet,location_id,tag_labels',
+                                            order_by='-score')
+
+        # print(pois)
+        self.assertIsNotNone(pois)
+        self.assertEqual(2, len(pois))
+        self.assertEqual(pois[0].name, 'Golf 5')
+        self.assertEqual(pois[1].name, 'GOLD FOUNTAIN')
+
+    def test_points_of_interest_paris(self):
+        pois = self._api.points_of_interest(annotate='trigram:Eiffel',trigram='>=0.3',location_id='Paris',
+                                            count=10, fields='id,name,score,snippet,location_id,tag_labels',
+                                            order_by='-score')
+
+        self.assertIsNotNone(pois)
+        self.assertEqual(10, len(pois))
+
 if __name__ == '__main__':
     api_test = unittest.TestLoader().loadTestsFromTestCase(TestAPIGeneral)
     unittest.TextTestRunner(verbosity=1).run(api_test)

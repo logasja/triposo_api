@@ -87,20 +87,6 @@ class ApiObject(object):
             data_dict = data_dict[map_list]
         return data_dict
 
-    @property
-    def thumbnail(self):
-        """Return the default sized thumbnail URL.
-
-        Default is defined as the smallest.
-
-        """
-        for thumb in ["tb", "sm", "md", "lg"]:
-            try:
-                return self._thumbnail[thumb]
-            except KeyError:
-                continue
-        return None
-
     def __eq__(self, other):
         """Define equality of two API objects as having the same type and attributes."""
         return (type(self) == type(other) and
@@ -146,3 +132,132 @@ class Location(ApiObject):
         }
         self._build(location_json)
         self._api = api
+
+class DayPlan(ApiObject):
+    """Class representing a Day Plan.
+
+    Attributes:
+        seed (int):             The seed used to generate this dayplan.
+        location (Location):    Location in which the plan takes place.
+        hotel (POI):            Hotel description where day plan is based from, if supplied
+        days (list):            Day by day description of the day plan.
+    """
+    def __init__(self, dayplan_json, api=None):
+        """Take in a JSON representation of a dayplan and convert it to a DayPlan Object.
+
+        Args:
+            dayplan_json (json):        JSON representation of a article resource.
+        """
+        super(DayPlan, self).__init__()
+        self.attrs = {
+            "seed":         "seed",
+            "_location":    "location",
+            "_hotel":       "hotel",
+            "_days":        "days"
+        }
+        self._build(dayplan_json)
+        self._api = api
+        self.day = []
+        try:
+            self.location = Location(self._location)
+        except:
+            print("Unable to build Location object")
+        try:
+            self.hotel = PointOfInterest(self._hotel)
+        except:
+            print("Unable to build hotel POI")
+        try:
+            for day in self._days:
+                self.day.append(Itinerary(day))
+        except:
+            print("Unable to build itinerary list")
+
+class PointOfInterest(ApiObject):
+    """Class representing a Point of Interest.
+
+    Attributes:
+        id_ (str):              The machine-readable identifier of POI.
+        name (str):             The human-readable name of this POI.
+        price (int):            Price indication for this POI, if available. 1=cheap, 2=medium, 3=expensive.
+        intro (str):            A medium-length version of the content.
+        location_id (str):      The ID of the location this POI is contained within.
+        score (float):          An indicator of the importance of this POI, generally between 0 and 10.
+        snippet (str):          A short version of the content.
+        tag_labels (list):      The labels of the tags that apply to this POI
+    """
+
+    def __init__(self, poi_json, api=None):
+        """Take in a JSON representation of a poi and convert it to a PointOfInterest Object.
+
+        Args:
+            poi_json (json):            JSON representation of a poi resource.
+        """
+        super(PointOfInterest, self).__init__()
+        self.attrs = {
+            "id_":          "id",
+            "name":         "name",
+            "price":        "price_tier",
+            "intro":        "intro",
+            "location_id":  "location_id",
+            "score":        "score",
+            "snippet":      "snippet",
+            "tag_labels":   "tag_labels"
+        }
+        self._build(poi_json)
+        self._api = api
+
+class Itinerary(ApiObject):
+    """Class representing a Itinerary.
+
+    Attributes:
+        date (str):             A title for this itinerary.
+        items (list):           A longer description of this itinerary item.
+    """
+
+    def __init__(self, itinerary_json, api=None):
+        """Take in a JSON representation of a itinerary and convert it to a Itinerary Object.
+
+        Args:
+            itinerary_json (json): JSON representation of an itinerary
+        """
+        super(Itinerary, self).__init__()
+        self.attrs = {
+            "date":         "date",
+            "_items":        "itinerary_items"
+        }
+        self._build(itinerary_json)
+        self._api = api
+        self.items = []
+        try:
+            for item in self._items:
+                self.items.append(ItineraryItem(item))
+        except Exception:
+            print("Oops can't make ItineraryItems.")
+
+class ItineraryItem(ApiObject):
+    """Class representing a Itinerary Item.
+
+    Attributes:
+        title (str):            A title for this itinerary item.
+        description (str):      A longer description of this itinerary item.
+        poi (POI):              The POI object corresponding to this itinerary item.
+    """
+
+    def __init__(self, itinerary_item_json, api=None):
+        """Take in a JSON representation of a itinerary item and convert it to a ItineraryItem Object.
+
+        Args:
+            itinerary_item_json (json): JSON representation of a itinerary item
+        """
+        super(ItineraryItem, self).__init__()
+        self.attrs = {
+            "description":  "description",
+            "title":        "title",
+            "_poi":          "poi"
+        }
+        self._build(itinerary_item_json)
+        self._api = api
+        try:
+            self.poi = PointOfInterest(self.poi_json)
+        except Exception:
+            print("oops can't make a POI.")

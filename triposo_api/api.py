@@ -43,9 +43,6 @@ class Api(object):
 
         """
         response = self.__session.get(url, params=params)
-        # print(url)
-        # print(response.status_code)
-        # print(response.json()['results'])
         # Check status code
         if response.status_code == 401:
             # TODO Bad api key
@@ -57,6 +54,7 @@ class Api(object):
             response.raise_for_status()
         try:
             json_data = response.json()
+            # print(json_data)
             if json_data['estimated_total'] == 1:
                 # print("A single one")
                 return json_data['results'][0]
@@ -107,6 +105,7 @@ class Api(object):
         if not data:
             return None
         items = []
+        # print(data)
         for json_item in data:
             item = model_class(json_item, self)
             items.append(item)
@@ -126,146 +125,50 @@ class Api(object):
         return self.__build_response('location.json?' + url, models.Location)
 
     def locations(self, **kwargs):
-        # TODO add more explanation about how iterable works (see shows() doc)
-        """Get latest episodes from feed.
+        """Get a list of locations.
 
         Args:
-            partof (str, optional): If specified, only cities from this country will be returned.
-            page (int):           The page to start from (Default value = 1).
-            count (int):          Number of Episodes per page (Default value = 20).
+            kwargs:     Collection of arguments for locations
 
         Returns:
-            iterable: An iterable collection of :class:`Locations <triposo_api.models.Location>`
-            from 'topcity' feed.
+            iterable: An iterable collection of :class:`Locations <triposo_api.models.Location>`.
 
         """
         url = self._arguments_from_kwargs(kwargs)
         return self.__get_multiple('location.json?' + url, models.Location)
 
-    def season(self, season_id):
-        """Retrieve the season corresponding to the specified id.
+    def day_planner(self, **kwargs):
+        """Get day plans
 
         Args:
-            season_id (int): ID of the season to retrieve.
+            kwargs:     Collection of arguments for locations
 
         Returns:
-            Season: Season instance.
-
+            iterable: An iterabile collection of :class:`
         """
-        return self.__build_response("seasons/{0}".format(season_id), models.Season)
+        url = self._arguments_from_kwargs(kwargs)
+        return self.__build_response('day_planner.json?' + url, models.DayPlan)
 
-    def season_episodes(self, season_id):
-        """Retrieve the episodes that belong to the season with the specified id.
+    def point_of_interest(self, **kwargs):
+        """Get single point of interest
 
         Args:
-            season_id (int): ID of the season.
+            kwargs:     Collection of arguments for poi
 
         Returns:
-            list: A list of :class:`~rt_api.models.Episode` objects.
-
+            POI:    A PointOfInterest class object
         """
-        res = []
-        for episode in self.__pager(models.Episode, "seasons/{0}/episodes".format(season_id), count=20, page=1):
-            res.append(episode)
-        return res
+        url = self._arguments_from_kwargs(kwargs)
+        return self.__build_response('poi.json?' + url, models.PointOfInterest)
 
-    def show_seasons(self, show_id):
-        """Get the seasons belonging to show with specified ID.
+    def points_of_interest(self, **kwargs):
+        """Get list of points of interest.
 
         Args:
-            show_id (int): ID of the show.
+            kwargs:     Collection of arguments for poi
 
         Returns:
-            list: A list of :class:`~rt_api.models.Season` objects.
-
+            list(POI):  A list of PointOfInterest objects
         """
-        return self.__get_multiple(models.Season, "shows/{0}/seasons/".format(show_id))
-
-    def shows(self, site=None, page=1, count=20):
-        """Return an iterable feed of :class:`Shows <rt_api.models.Show>`.
-
-        This will return an iterable, which starts at the specified page,
-        and can be iterated over to retrieve all shows onwards.
-
-        Under the hood, as this is iterated over, new pages are fetched from the API.
-        Therefore, the size of ``count`` will dictate the delay this causes.
-
-        A larger ``count`` means larger delay, but fewer total number of
-        pages will need to be fetched.
-
-        Args:
-            site (str):  Only return shows from specified site, or all sites if None.
-            page (int):  The page to start from (Default value = 1).
-            count (int): Number of Shows per page (Default value = 20).
-
-        Returns:
-            iterable: An iterable collection of :class:`Shows <rt_api.models.Show>`.
-
-        Example::
-
-            r = rt_api()
-            show_feed = r.shows(site="theKnow")
-            for show in show_feed:
-                print(show)
-
-        """
-        # TODO 'site' should be an Enum?
-        return self.__pager(models.Show, "shows/", count=count, page=page, site=site)
-
-    def search(self, query, include=None):
-        """Perform a search for the specified query.
-
-        Currently only supports searching for Episodes, Shows, and Users.
-        Unfortunately, the Api only returns up to 10 of each resource type.
-
-        Args:
-            query (str): The value to search for.
-            include (list, optional): A list of types to include in the results (Default value = None).
-                If ``include`` is specified, only objects of those types will be returned in the results.
-
-        Example:
-            Search for "funny", only in shows and episodes.
-
-            .. code-block::  python
-
-                search("funny", include=[rt_api.models.Show, rt_api.models.Episode])
-
-        Returns:
-            list: The search results.
-
-        """
-        url = posixpath.join(config.END_POINT, "search/?q={0}".format(query))
-        data = self.__get_data(url)
-        mapping = {
-            "episodes": models.Episode,
-            "shows": models.Show,
-            "users": models.User
-        }
-        items = []
-        for result_set in data:
-            # Try to find corresponding model for this result type
-            model_key = None
-            for result_type in mapping:
-                if result_type in result_set.keys():
-                    model_key = result_type
-                    break
-            if model_key:
-                # Check if we are doing any filtering
-                if include and mapping[model_key] not in include:
-                    # This model is not in 'include', so skip it
-                    continue
-                for item in result_set[model_key]:
-                    items.append(mapping[model_key](item))
-        return items
-
-
-class AuthenticationError(Exception):
-    """Raised when an error is encountered while performing authentication."""
-
-    pass
-
-
-class NotAuthenticatedError(Exception):
-    """Raised if an action requiring authentication is attempted but no account is authenticated."""
-
-    pass
+        url = self._arguments_from_kwargs(kwargs)
+        return self.__get_multiple('poi.json?' + url, models.PointOfInterest)
