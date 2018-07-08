@@ -10,8 +10,7 @@ import posixpath
 from functools import wraps
 
 import requests
-
-import models
+from triposo_api import models, config
 
 class Api(object):
     """Main class of the API.
@@ -20,7 +19,7 @@ class Api(object):
 
     """
 
-    def __init__(self, api_key=None):
+    def __init__(self, account_id = config.ACCOUNT_ID, token = config.TOKEN_SECRET):
         """Create an api object.
 
         Args:
@@ -29,23 +28,8 @@ class Api(object):
 
         """
         self.__session = requests.Session()
-
-    @property
-    def me(self):
-        """Access the :class:`~rt_api.models.User` object for the authenticated user.
-
-        If not authenticated as a user, returns None.
-
-        Returns:
-            User: The user object corresponding to authenticated user or None.
-
-        """
-        if not self._me and self.user_id:
-            self._me = self.user(self.user_id)
-        elif not self._me and not self.user_id:
-            # No user id, and no user, so cant find authenticated user
-            return None
-        return self._me
+        self.__session.headers['X-Triposo-Account'] = account_id
+        self.__session.headers['X-Triposo-Token'] = token
 
     def __get_data(self, url, params=None):
         """Get the data at the given URL, using supplied parameters.
@@ -59,6 +43,9 @@ class Api(object):
 
         """
         response = self.__session.get(url, params=params)
+        # print(url)
+        # print(response.status_code)
+        # print(response.json()['results'])
         # Check status code
         if response.status_code == 401:
             # TODO Bad api key
@@ -69,7 +56,7 @@ class Api(object):
         elif response.status_code != requests.codes.ok:
             response.raise_for_status()
         try:
-            return response.json()
+            return response.json()['results'][0]
         except ValueError:
             # Parsing json response failed
             pass
@@ -85,7 +72,7 @@ class Api(object):
             object: Instance of the specified model class.
 
         """
-        data = self.__get_data(posixpath.join(END_POINT, path))
+        data = self.__get_data(posixpath.join(config.END_POINT, path))
         if not data:
             # TODO raise exception complaining that no data was retrieved from api?
             return None
@@ -104,7 +91,7 @@ class Api(object):
             list: A list containing items of type model_class.
 
         """
-        url = posixpath.join(END_POINT, path)
+        url = posixpath.join(config.END_POINT, path)
         data = self.__get_data(url, kwargs)
         if not data:
             return None
@@ -140,17 +127,17 @@ class Api(object):
             else:
                 break
 
-    def episode(self, episode_id):
+    def location(self, location_id, fields='all'):
         """Retrieve the episode corresponding to the specified id.
 
         Args:
-            episode_id (int): ID of the episode to retrieve.
+            location_id (int): ID of the location to retrieve.
 
         Returns:
-            Episode: Episode instance.
+            Location: Location instance.
 
         """
-        return self.__build_response("episodes/{0}".format(episode_id), models.Episode)
+        return self.__build_response("location.json?id={0}&fields={1}".format(location_id, fields), models.Location)
 
     def episodes(self, site=None, page=1, count=20):
         # TODO add more explanation about how iterable works (see shows() doc)
@@ -207,18 +194,6 @@ class Api(object):
         """
         return self.__get_multiple(models.Season, "shows/{0}/seasons/".format(show_id))
 
-    def show(self, show_id):
-        """Return show with given id.
-
-        Args:
-            show_id (int): ID of the show to retrieve.
-
-        Returns:
-            Show: Show instance.
-
-        """
-        return self.__build_response("shows/{0}".format(show_id), models.Show)
-
     def shows(self, site=None, page=1, count=20):
         """Return an iterable feed of :class:`Shows <rt_api.models.Show>`.
 
@@ -250,130 +225,6 @@ class Api(object):
         # TODO 'site' should be an Enum?
         return self.__pager(models.Show, "shows/", count=count, page=page, site=site)
 
-    def user(self, user_id):
-        """Retrieve the User with the specified id.
-
-        Args:
-            user_id (int): ID of the user to retrieve.
-
-        Returns:
-            User: User instance.
-
-        """
-        return self.__build_response("users/{0}".format(user_id), models.User)
-
-    @authenticated
-    def update_user_details(self, user_id, **kwargs):
-        """Update the details of the user with the specified id.
-
-        You must be authenticated as the user to be updated.
-        Attributes should be specified as keyword arguments.
-
-        Possible keyword arguments:
-            displayTitle,
-            name,
-            sex,
-            location,
-            occupation,
-            about
-
-        Note:
-            All attributes will be updated. If an attribute is not specified,
-            the remote end assumes it to be empty and sets it as such.
-
-        Args:
-            user_id (int): ID of the user to update.
-
-        Raises:
-            NotAuthenticatedError: if not currently authenticated as a user,
-                or this is attempted on a user not authenticated as.
-
-        """
-        if user_id != self.user_id:
-            # Attempting to update a user we are not authenticated as.
-            # This will result in a 401 response, so don't bother sending request.
-            raise NotAuthenticatedError
-        path = "users/{0}".format(user_id)
-        url = posixpath.join(END_POINT, path)
-        data = kwargs
-        response = self.__session.put(url, data=data)
-        response.raise_for_status()
-        # Update 'me' user with new details
-        # TODO update existing user object instead of creating new one and replacing reference
-        self._me = models.User(response.json(), self)
-
-    def user_queue(self, user_id, page=1, count=20):
-        # TODO add more explanation about how iterable works (see shows() doc)
-        """Retrieve the episodes in specified user's queue.
-
-        Args:
-            user_id (int): The ID of the user to get the queue of.
-            page (int):    The page to start from (Default value = 1).
-            count (int):   Number of Episodes per page (Default value = 20).
-
-        Returns:
-            iterable: Iterable of :class:`~rt_api.models.Episode` instances.
-
-        """
-        return self.__pager(models.Episode, "users/{0}/queue".format(user_id), page=page, count=count)
-
-    @authenticated
-    def add_episode_to_queue(self, episode_id):
-        """Add specified episode to current user's queue.
-
-        Args:
-            episode_id (int): ID of the episode to add to user's queue.
-
-        Returns:
-            str: Success message from API or None.
-
-        Raises:
-            NotAuthenticatedError: if not currently authenticated as a user.
-
-        """
-        path = "episodes/{0}/add-to-queue".format(episode_id)
-        url = posixpath.join(END_POINT, path)
-        response = self.__session.post(url)
-        response.raise_for_status()
-        # Mark user queue as needing refresh
-        self.me.queue_dirty = True
-        return response.headers.get("X-Message")
-
-    @authenticated
-    def remove_episode_from_queue(self, episode_id):
-        """Remove specified episode from current user's queue.
-
-        Args:
-            episode_id (int): ID of the episode to remove from user's queue.
-
-        Returns:
-            str: Success message from API or None.
-
-        Raises:
-            NotAuthenticatedError: if not currently authenticated as a user.
-
-        """
-        path = "episodes/{0}/remove-from-queue".format(episode_id)
-        url = posixpath.join(END_POINT, path)
-        response = self.__session.delete(url)
-        response.raise_for_status()
-        # Mark user queue as needing refresh
-        self.me.queue_dirty = True
-        return response.headers.get("X-Message")
-
-    @authenticated
-    def mark_episode_watched(self, episode_id):
-        """Mark the specified episode as having been watched by the current user.
-
-        Args:
-            episode_id (int): ID of the episode to mark as having been watched.
-
-        """
-        path = "episodes/{0}/mark-as-watched".format(episode_id)
-        url = posixpath.join(END_POINT, path)
-        response = self.__session.put(url)
-        response.raise_for_status()
-
     def search(self, query, include=None):
         """Perform a search for the specified query.
 
@@ -396,7 +247,7 @@ class Api(object):
             list: The search results.
 
         """
-        url = posixpath.join(END_POINT, "search/?q={0}".format(query))
+        url = posixpath.join(config.END_POINT, "search/?q={0}".format(query))
         data = self.__get_data(url)
         mapping = {
             "episodes": models.Episode,

@@ -111,100 +111,38 @@ class ApiObject(object):
         """Nicer printing of API objects."""
         return str(dict((k, self.__dict__[k]) for k in self.attrs.keys()))
 
-class Article(ApiObject):
-    """Class representing a Article.
+class Location(ApiObject):
+    """Class representing a Location.
 
     Attributes:
-        id_ (str):              Article identifier.
-        intro (str):            Article Intro.
-        location_ids (list):    Summary of the show.
-        name (str):             Human readable title for article.
-        score (float):          Indicator of the importance of article, between 0 and 10
-        snippet (str):          Short version of the content of article.
-        # content (Content):      The content of this article.
-        # tag_labels (list):      Labels of the tags that apply to this article.
-        tags (list):            Full tags that apply to this article.
+        id_ (str):              Location identifier.
+        country_id (str):       The location ID of the country this location is contained within.
+        intro (str):            Medium-length string describing location.
+        name (str):             The human-readable name of the location.
+        parent_id (str):        The ID of the parent location.
+        score (float):          An indicator of the importance of the location, between 0 and 10.
+        snippet (str):          A short string describing the location.
+        tag_labels (list):      The labels of the tags that apply to this location.
+        type (str):             (city, city_state, island, national_park, region, country).
     """
 
-    def __init__(self, article_json, api=None):
+    def __init__(self, location_json, api=None):
         """Take in a JSON representation of a article and convert it into a Article Object.
 
         Args:
             article_json (json):       JSON representation of a article resource.
-            api (object, optional):    Object that implements the API
-                                       (see :class:`~triposo_api.api.triposo_api`).
-                                       This will be used to make calls to the API when needed.
         """
-        super(Article, self).__init__()
-        self._api = api
+        super(Location, self).__init__()
         self.attrs = {
             "id_":          "id",
-            "name":         "name",
+            "country_id":   "country_id",
             "intro":        "intro",
+            "name":         "name",
+            "parent_id":    "parent_id",
             "score":        "score",
             "snippet":      "snippet",
-            # "tag_labels":   "tag_labels",
-            "tags":         "tags"
+            "tag_labels":   "tag_labels",
+            "type":         "type"
         }
-        self._build(article_json)
-        # try:
-        #     content_json = article_json['content']
-        #     self._content = Content(content_json)
-        # except KeyError:
-        #     # Doesn't have thumbnail
-        #     pass
-
-    @property
-    @api_method
-    def seasons(self):
-        """Return all seasons of the Show."""
-        if not self._seasons:
-            self._seasons = self._api.show_seasons(self.id_)
-        return self._seasons
-
-    @property
-    def episodes(self):
-        """Return all the episodes of the Show."""
-        if not self._episodes:
-            self._episodes = []
-            for season in self.seasons:
-                self._episodes.extend(season.episodes)
-        return self._episodes
-
-    def get_thumbnail(self, quality):
-        """Return the URL of the show's thumbnail at specified quality.
-
-        Args:
-            quality (str):  possible values are (in order from smallest to largest): "tb", "sm", "md", "lg".
-
-        Returns:
-            str: URL of the thumbnail or ``None`` if thumbnail not available at specified quality.
-
-        """
-        try:
-            return self._thumbnail[quality]
-        except KeyError:
-            return None
-
-    @property
-    def cover_picture(self):
-        """Return the default sized cover picture URL.
-
-        If not available, return the next most 'appropriate' sized thumbnail.
-        'Most appropriate' is defined as largest, as the cover picture is usually
-        used as a large backdrop.
-
-        Returns:
-            str: URL of the cover picture or ``None`` if no cover picture is available.
-
-        Examples:
-            >>> some_show.cover_picture
-            'http://s3.amazonaws.com/cdn.roosterteeth.com/uploads/images/14a811b0-b0f1-4b08-a65b-1c565d6d153f/original/21-1458935312881-ots_hero.png'
-
-        """
-        for picture in ["lg", "tb", "sm", "md"]:
-            try:
-                return self._cover_picture[picture]
-            except KeyError:
-                continue
-        return None
+        self._build(location_json)
+        self._api = api
