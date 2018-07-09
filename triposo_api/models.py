@@ -158,6 +158,8 @@ class DayPlan(ApiObject):
         self._build(dayplan_json)
         self._api = api
         self.day = []
+        self.location = None
+        self.hotel = None
         try:
             self.location = Location(self._location)
         except:
@@ -258,6 +260,6 @@ class ItineraryItem(ApiObject):
         self._build(itinerary_item_json)
         self._api = api
         try:
-            self.poi = PointOfInterest(self.poi_json)
+            self.poi = PointOfInterest(self._poi)
         except Exception:
             print("oops can't make a POI.")

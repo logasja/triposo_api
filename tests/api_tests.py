@@ -27,11 +27,13 @@ class TestAPIGeneral(unittest.TestCase):
         self.assertIsNotNone(koreas[0].name)
         self.assertIsNotNone(koreas[1].name)
 
-    # def test_day_planner(self):
-    #     lisbon = self._api.day_planner(location_id='Lisbon', hotel_poi_id='T__4b30a4f2881c', start_date='2017-06-03',
-    #                                    arrival_time='14:33', end_date='2017-06-06', departure_time='16:55')
-    #     self.assertIsNotNone(lisbon)
-    #     print(lisbon)
+    def test_day_planner(self):
+        lisbon = self._api.day_planner(location_id='Lisbon', hotel_poi_id='T__4b30a4f2881c', start_date='2017-06-03',
+                                       arrival_time='14:33', end_date='2017-06-06', departure_time='16:55')
+        self.assertIsNotNone(lisbon)
+        self.assertIsNotNone(lisbon.location)
+        self.assertIsNotNone(lisbon.hotel)
+        self.assertFalse(len(lisbon.day) == 0)
 
     def test_point_of_interest(self):
         poi = self._api.point_of_interest(id='W__5013364', fields='all')
@@ -44,7 +46,6 @@ class TestAPIGeneral(unittest.TestCase):
                                             count=10, fields='id,name,score,snippet,location_id,tag_labels',
                                             order_by='-score')
 
-        # print(pois)
         self.assertIsNotNone(pois)
         self.assertEqual(2, len(pois))
         self.assertEqual(pois[0].name, 'Golf 5')
