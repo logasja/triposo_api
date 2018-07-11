@@ -1,8 +1,10 @@
 """Module containing the interface to the Api.
 
-Currently access to  is provided.
-
-Todo:
+Currently access:
+Location
+PointOfInterest
+DayPlan
+Itinerary
 
 """
 
