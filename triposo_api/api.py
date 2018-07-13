@@ -11,6 +11,7 @@ Itinerary
 import posixpath
 from functools import wraps
 
+from cache_requests import Session
 import requests
 from triposo_api import models, config
 
@@ -29,7 +30,7 @@ class Api(object):
                 If one is not supplied, a default one will be generated and used.
 
         """
-        self.__session = requests.Session()
+        self.__session = Session()
         self.__session.headers['X-Triposo-Account'] = account_id
         self.__session.headers['X-Triposo-Token'] = token
 

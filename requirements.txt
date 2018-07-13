@@ -1,5 +1,6 @@
 requests
 requests_oauthlib
+cache_requests
 httmock
 pytest
 flaky
