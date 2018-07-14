@@ -22,7 +22,7 @@ class Api(object):
 
     """
 
-    def __init__(self, account_id = config.ACCOUNT_ID, token = config.TOKEN_SECRET):
+    def __init__(self, account_id = config.API_ACCOUNT, token = config.API_KEY):
         """Create an api object.
 
         Args:

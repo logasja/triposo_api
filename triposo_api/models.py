@@ -103,6 +103,7 @@ class Location(ApiObject):
     Attributes:
         id_ (str):              Location identifier.
         country_id (str):       The location ID of the country this location is contained within.
+        country_code (str):     Agreed upon identifier for countries.
         intro (str):            Medium-length string describing location.
         name (str):             The human-readable name of the location.
         parent_id (str):        The ID of the parent location.
@@ -122,6 +123,7 @@ class Location(ApiObject):
         self.attrs = {
             "id_":          "id",
             "country_id":   "country_id",
+            "country_code": "country_code",
             "intro":        "intro",
             "name":         "name",
             "parent_id":    "parent_id",
