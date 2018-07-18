@@ -265,3 +265,43 @@ class ItineraryItem(ApiObject):
             self.poi = PointOfInterest(self._poi)
         except Exception:
             print("oops can't make a POI.")
+
+class Tag(ApiObject):
+    """Class representing a Tag Item.
+
+    Attributes:
+        tour_count (int):       The number of tours that have this tag.
+        article_count (int):    The number of articles with this tag.
+        label (str):            A machine-readable label for this tag - only unique within a location_id.
+        location_id (str):      The ID of the location this tag applies to.
+        name (str):             A human-readable name for this tag.
+        poi_count (int):        Number of POIs with this tag.
+        score (int):            The score of this tag, between 0 and ~10.
+        short_name (str):       A short human-readable name for this tag.
+        snippet (str):          A short string describing the tag.
+        tour_count (int):       The number of tours that have this tag.
+        type (tag_type):        The general type of tag.
+    """
+
+    def __init__(self, tag_json, api=None):
+        """Take in a JSON representation of a tag item and convert it to a Tag Object.
+
+        Args:
+            tag_json (json): JSON representation of a tag item
+        """
+        print(tag_json)
+        super(Tag, self).__init__()
+        self.attrs = {
+            "tour_count":       "tour_count",
+            "article_count":    "article_count",
+            "label":            "label",
+            "location_id":      "location_id",
+            "name":             "name",
+            "poi_count":        "poi_count",
+            "score":            "score",
+            "short_name":       "short_name",
+            "snippet":          "snippet",
+            "type":             "type"
+        }
+        self._build(tag_json)
+        self._api = api

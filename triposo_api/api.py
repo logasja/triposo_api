@@ -175,3 +175,23 @@ class Api(object):
         """
         url = self._arguments_from_kwargs(kwargs)
         return self.__get_multiple('poi.json?' + url, models.PointOfInterest)
+
+    def tags(self, **kwargs):
+        """Get list of tags.
+
+        Args:
+            kwargs:     Collection of arguments for tags.
+
+        Returns:
+            list(Tag):  A list of Tag objects
+        """
+        url = self._arguments_from_kwargs(kwargs)
+        return self.__get_multiple('tag.json?' + url, models.Tag)
+
+    def get_common_tag_labels(self):
+        """Get list of the most common tags.
+
+        Returns:
+            list(Object):   A list of objects
+        """
+        return self.__get_data(posixpath.join(config.END_POINT, 'common_tag_labels.json'))

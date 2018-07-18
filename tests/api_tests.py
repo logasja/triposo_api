@@ -1,5 +1,6 @@
 import unittest
 import context
+import json
 from triposo_api.api import Api
 from unittest import mock
 
@@ -58,6 +59,31 @@ class TestAPIGeneral(unittest.TestCase):
 
         self.assertIsNotNone(pois)
         self.assertEqual(10, len(pois))
+
+    def test_tag_sydney(self):
+        tags = self._api.tags(location_id='Sydney', 
+                              count=10, 
+                              order_by='-score')
+        self.assertIsNotNone(tags)
+        self.assertEqual(10, len(tags))
+
+    def test_architecture_tags(self):
+        architecture = self._api.tags(location_id='Berlin',
+                                      type='architecture')
+        self.assertIsNotNone(architecture)
+        self.assertEqual(10, len(architecture))
+
+    def test_practical_tags(self):
+        practicals = self._api.tags(location_id='Saint_Petersburg',
+                                    type='practical')
+
+        self.assertIsNotNone(practicals)
+        self.assertEqual(10, len(practicals))
+
+    def test_get_common_tag_labels(self):
+        tag_labels = self._api.get_common_tag_labels()
+        with open('tags.txt', 'w') as outfile:
+            json.dump(tag_labels, outfile)
 
 if __name__ == '__main__':
     api_test = unittest.TestLoader().loadTestsFromTestCase(TestAPIGeneral)
