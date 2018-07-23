@@ -289,7 +289,6 @@ class Tag(ApiObject):
         Args:
             tag_json (json): JSON representation of a tag item
         """
-        print(tag_json)
         super(Tag, self).__init__()
         self.attrs = {
             "tour_count":       "tour_count",
